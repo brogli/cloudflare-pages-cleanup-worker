@@ -9,8 +9,12 @@
   "vars": {
     // Pages project names to clean up.
     "PROJECTS": [],
-    // Newest deployments to keep per environment (production, preview) per project.
-    "KEEP_PER_ENV": 10,
+    // Newest deployments to keep per project and environment.
+    "KEEP_PRODUCTION": 10,
+    "KEEP_PREVIEW": 10,
+    // API requests per run. The free plan allows 50 subrequests per invocation; raise it for a
+    // local backlog run.
+    "MAX_REQUESTS_PER_RUN": 45,
     // Only log what would be deleted. Set to false once the logs look right.
     "DRY_RUN": true,
   },

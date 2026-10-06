@@ -1,17 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { PagesApi } from "../src/pages-api";
+import { BudgetExhausted, PagesApi } from "../src/pages-api";
 
-const ok = (result: unknown) => ({ success: true, errors: [], result });
-const deployments = (count: number, prefix: string) =>
-  Array.from({ length: count }, (_, i) => ({
-    id: `${prefix}${i}`,
-    environment: "preview",
-    created_on: "",
-    aliases: null,
-  }));
+const ok = (result: unknown, total?: number) => ({
+  success: true,
+  errors: [],
+  result,
+  result_info: total === undefined ? undefined : { total_count: total },
+});
 
 function mockFetch(bodies: object[]) {
-  const fetchMock = vi.fn(async () => new Response(JSON.stringify(bodies.shift())));
+  const fetchMock = vi.fn(async (_url: string) => new Response(JSON.stringify(bodies.shift())));
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
@@ -19,24 +17,33 @@ function mockFetch(bodies: object[]) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("PagesApi", () => {
-  const api = new PagesApi("account", "token");
+  it("lists one page with the environment filter and returns the total", async () => {
+    const fetchMock = mockFetch([ok([{ id: "a" }], 120)]);
+    const page = await new PagesApi("account", "token", 10).listPage("site", "preview", 3);
+    expect(page).toEqual({ deployments: [{ id: "a" }], total: 120 });
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      "/pages/projects/site/deployments?env=preview&per_page=25&page=3",
+    );
+  });
 
-  it("fetches pages until one comes back short", async () => {
-    const fetchMock = mockFetch([ok(deployments(100, "a")), ok(deployments(1, "b"))]);
-    const result = await api.listDeployments("site");
-    expect(result).toHaveLength(101);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+  it("throws BudgetExhausted once the request budget is used up", async () => {
+    mockFetch([ok([], 0), ok([], 0)]);
+    const api = new PagesApi("account", "token", 1);
+    await api.listPage("site", "preview", 1);
+    await expect(api.listPage("site", "preview", 1)).rejects.toBeInstanceOf(BudgetExhausted);
   });
 
   it("throws when the API reports success: false", async () => {
     mockFetch([
       { success: false, errors: [{ code: 10000, message: "Authentication error" }], result: null },
     ]);
-    await expect(api.listDeployments("site")).rejects.toThrow("Authentication error");
+    await expect(
+      new PagesApi("account", "token", 10).listPage("site", "preview", 1),
+    ).rejects.toThrow("Authentication error");
   });
 
   it("returns the canonical deployment id", async () => {
     mockFetch([ok({ canonical_deployment: { id: "live" } })]);
-    expect(await api.liveProductionId("site")).toBe("live");
+    expect(await new PagesApi("account", "token", 10).liveProductionId("site")).toBe("live");
   });
 });
