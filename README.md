@@ -1,7 +1,6 @@
 # cloudflare-pages-cleanup-worker
 
-A Cloudflare Worker that deletes old Cloudflare Pages deployments on a schedule. Runs on Cloudflare
-itself, so no CI minutes are used.
+A Cloudflare Worker that deletes old Cloudflare Pages deployments on a schedule.
 
 ## What it does
 
