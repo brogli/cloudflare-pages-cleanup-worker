@@ -8,7 +8,7 @@ itself, so no CI minutes are used.
 Once a day, for each configured Pages project and for each environment (production, preview)
 separately:
 
-1. keep the newest `KEEP_PER_ENV` deployments
+1. keep the newest `KEEP_PRODUCTION` or `KEEP_PREVIEW` deployments
 2. skip deployments that still have an alias (the latest deployment of each branch)
 3. delete the rest
 
@@ -41,7 +41,9 @@ installed yourself.
    ```jsonc
    "vars": {
      "PROJECTS": ["my-site", "my-other-site"],
-     "KEEP_PER_ENV": 10,
+     "KEEP_PRODUCTION": 10,
+     "KEEP_PREVIEW": 10,
+     "MAX_REQUESTS_PER_RUN": 45,
      "DRY_RUN": true
    }
    ```
@@ -67,15 +69,28 @@ installed yourself.
    pnpm deploy
    ```
 
+8. Log out again. The worker keeps running on Cloudflare; the login is only needed to deploy.
+
+   ```sh
+   pnpm wrangler logout
+   ```
+
+Each run deletes from the oldest deployments upward and stops after `MAX_REQUESTS_PER_RUN` API
+requests, so a backlog shrinks by roughly 40 deployments per run on the free plan. To clear a large
+backlog in one go, run it locally (see below) with `MAX_REQUESTS_PER_RUN` raised, since no
+subrequest limit applies there.
+
 ## Configuration
 
-| Variable                | Where            | Meaning                                                 |
-| ----------------------- | ---------------- | ------------------------------------------------------- |
-| `PROJECTS`              | `wrangler.jsonc` | Pages project names. Only these are touched.            |
-| `KEEP_PER_ENV`          | `wrangler.jsonc` | Newest deployments to keep per environment per project. |
-| `DRY_RUN`               | `wrangler.jsonc` | `true` only logs what would be deleted.                 |
-| `CLOUDFLARE_ACCOUNT_ID` | secret           | From `wrangler whoami`.                                 |
-| `CLOUDFLARE_API_TOKEN`  | secret           | Token with Pages Edit permission.                       |
+| Variable                | Where            | Meaning                                                                   |
+| ----------------------- | ---------------- | ------------------------------------------------------------------------- |
+| `PROJECTS`              | `wrangler.jsonc` | Pages project names. Only these are touched.                              |
+| `KEEP_PRODUCTION`       | `wrangler.jsonc` | Newest production deployments to keep per project.                        |
+| `KEEP_PREVIEW`          | `wrangler.jsonc` | Newest preview deployments to keep per project.                           |
+| `MAX_REQUESTS_PER_RUN`  | `wrangler.jsonc` | API requests per run. The free plan allows 50 subrequests per invocation. |
+| `DRY_RUN`               | `wrangler.jsonc` | `true` only logs what would be deleted.                                   |
+| `CLOUDFLARE_ACCOUNT_ID` | secret           | From `wrangler whoami`.                                                   |
+| `CLOUDFLARE_API_TOKEN`  | secret           | Token with Pages Edit permission.                                         |
 
 The schedule is `triggers.crons` in `wrangler.jsonc`, default `0 3 * * *` (daily at 03:00 UTC).
 
@@ -97,3 +112,6 @@ pnpm check   # type check (needs wrangler.jsonc; run `pnpm types` once first)
 ```
 
 `treefmt` formats everything: TypeScript, JSON, YAML and Markdown via oxfmt, Nix via nixfmt.
+
+CI runs the same checks plus `wrangler deploy --dry-run` on every pull request. Renovate auto-merges
+minor and patch updates once CI is green, so protect `main` with the `ci` check required.

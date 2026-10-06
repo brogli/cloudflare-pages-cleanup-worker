@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.dev.vars)",
+      "Bash(cat .dev.vars*)",
+      "Bash(cat ./.dev.vars*)",
+      "Bash(sed * .dev.vars*)",
+      "Bash(head * .dev.vars*)",
+      "Bash(grep * .dev.vars*)"
+    ]
+  }
+}

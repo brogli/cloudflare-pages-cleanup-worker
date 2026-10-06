@@ -1,0 +1,36 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices"],
+  "minimumReleaseAge": "7 days",
+  "packageRules": [
+    {
+      "description": "Override security:minimumReleaseAgeNpm (pulled in via config:best-practices), which sets 3 days for the npm datasource and would otherwise shadow our top-level 7 days.",
+      "matchDatasources": ["npm"],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Renovate can't validate release age for these update types (they carry no releaseTimestamp, so the stability check would stay pending forever).",
+      "matchUpdateTypes": ["pin", "pinDigest", "lockFileMaintenance"],
+      "minimumReleaseAge": null
+    },
+    {
+      "description": "Auto-merge minor and patch updates",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest", "pinDigest"],
+      "automerge": true
+    },
+    {
+      "description": "Exclude pre-1.0.0 versions from auto-merge (0.x minor bumps can be breaking by semver convention). Must come last so it overrides the rule above.",
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchCurrentVersion": "/^0\\./",
+      "automerge": false
+    }
+  ],
+  "nix": {
+    "enabled": true
+  },
+  "platformAutomerge": false,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  }
+}

@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        # Node and pnpm come from the flake's dev shell, same as locally via direnv.
+        shell: nix develop --command bash -eo pipefail {0}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+
+      # Exact key only: a prefix fallback would pile up old closures and then need GC roots.
+      - name: Cache Nix store
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7.0.2
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock') }}
+
+      - name: Get pnpm store path
+        id: pnpm-paths
+        run: echo "store=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-paths.outputs.store }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # wrangler.jsonc is gitignored; wrangler and `pnpm types` need one.
+      - name: Use example wrangler config
+        run: cp wrangler.jsonc.example wrangler.jsonc
+
+      - name: Format check
+        run: treefmt --ci
+
+      - name: Type check
+        run: pnpm types && pnpm check
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Bundle worker
+        run: pnpm exec wrangler deploy --dry-run
