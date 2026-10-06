@@ -32,7 +32,11 @@ installed yourself.
    pnpm wrangler login
    ```
 
-3. Configure the projects to clean up in `wrangler.jsonc`
+3. Create your config and fill in the projects to clean up. `wrangler.jsonc` is gitignored.
+
+   ```sh
+   cp wrangler.jsonc.example wrangler.jsonc
+   ```
 
    ```jsonc
    "vars": {
@@ -89,7 +93,7 @@ Local runs call the real Pages API, so keep `DRY_RUN` at `true` unless you mean 
 
 ```sh
 pnpm test    # unit tests
-pnpm check   # type check (run `pnpm types` once first)
+pnpm check   # type check (needs wrangler.jsonc; run `pnpm types` once first)
 ```
 
 `treefmt` formats everything: TypeScript, JSON, YAML and Markdown via oxfmt, Nix via nixfmt.
