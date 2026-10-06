@@ -1,0 +1,13 @@
+# oxfmt runs via `pnpm exec`, so its version comes from pnpm-lock.yaml.
+
+[global]
+excludes = ["flake.lock", "pnpm-lock.yaml", "LICENSE"]
+
+[formatter.oxfmt]
+command = "pnpm"
+options = ["exec", "oxfmt"]
+includes = ["*.ts", "*.json", "*.jsonc", "*.yaml", "*.md"]
+
+[formatter.nixfmt]
+command = "nixfmt"
+includes = ["*.nix"]
