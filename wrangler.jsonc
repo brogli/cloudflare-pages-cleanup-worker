@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cloudflare-pages-cleanup-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "triggers": {
+    "crons": ["0 3 * * *"],
+  },
+  "vars": {
+    // Pages project names to clean up.
+    "PROJECTS": [],
+    // Newest deployments to keep per environment (production, preview) per project.
+    "KEEP_PER_ENV": 10,
+    // Only log what would be deleted. Set to false once the logs look right.
+    "DRY_RUN": true,
+  },
+  "observability": {
+    "enabled": true,
+  },
+}
