@@ -13,6 +13,6 @@
     "oxfmt": "0.72.0",
     "typescript": "7.0.2",
     "vitest": "5.0.5",
-    "wrangler": "4.151.1"
+    "wrangler": "4.151.2"
   }
 }
