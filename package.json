@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "oxfmt": "0.72.0",
+    "oxfmt": "0.77.0",
     "typescript": "7.0.2",
     "vitest": "5.1.0",
     "wrangler": "4.158.0"
